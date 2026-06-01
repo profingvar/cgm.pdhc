@@ -32,3 +32,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Internal docs — intentionally not published
+tickets_cgm
