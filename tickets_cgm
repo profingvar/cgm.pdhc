@@ -1,0 +1,22 @@
+1. [DONE] Create cgm.pdhc — continuous monitoring provider, analogous to provider.pdhc
+
+   Structure: Flask + PostgreSQL + Docker on ports 9080/9081
+   Reuses provider.pdhc patterns: API key auth, PAT upstream, 2-step feed sync,
+   push reception, minimal payload submission to gateway, receipt ingestion.
+
+   1.1 [DONE] Infrastructure — config.py, docker-compose.yml, Dockerfile, .env, requirements.txt
+   1.2 [DONE] Models — reused from provider.pdhc + extended ProviderTask + new ObservationLog
+   1.3 [DONE] Services — reused from provider.pdhc + new ObservationSubmissionService
+   1.4 [DONE] API — reused endpoints + new POST /observe, POST /observe/complete, GET /observe/log
+   1.5 [DONE] Tests — 26 tests covering auth, tasks, observations, guided response, all endpoints
+
+   New vs provider.pdhc:
+   - ProviderTask extended: monitoring_interval_seconds, monitoring_until,
+     last_observation_at, total_observations_submitted, 'monitoring' status
+   - ObservationLog model: tracks each batch submitted to gateway
+   - ObservationSubmissionService: submit_batch() + complete_monitoring()
+   - POST /provider-tasks/<token>/observe — continuous batch submission
+   - POST /provider-tasks/<token>/observe/complete — end monitoring
+   - GET /provider-tasks/<token>/observe/log — batch history
+
+   Task lifecycle: dispatched → acknowledged → monitoring → completed

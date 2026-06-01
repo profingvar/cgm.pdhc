@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}Task {{ task.receipt_token }} — PDHC CGM Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Task Detail</h1>
+    <p class="lead"><code>{{ task.receipt_token }}</code></p>
+  </div>
+  <div class="button-group-sm">
+    <a href="{{ url_for('web.task_list') }}" class="btn btn-sm btn-secondary">Back to Tasks</a>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2>Task Information</h2>
+    <div class="detail-grid">
+      <span class="detail-label">GUID</span>
+      <span class="detail-value monospace">{{ task.guid }}</span>
+      <span class="detail-label">Status</span>
+      <span class="detail-value">
+        {% if task.status == 'dispatched' %}
+          <span class="badge badge-warning">Dispatched</span>
+        {% elif task.status == 'acknowledged' %}
+          <span class="badge badge-info">Acknowledged</span>
+        {% elif task.status == 'monitoring' %}
+          <span class="badge badge-info">Monitoring</span>
+        {% elif task.status == 'completed' %}
+          <span class="badge badge-success">Completed</span>
+        {% elif task.status == 'cancelled' %}
+          <span class="badge badge-danger">Cancelled</span>
+        {% else %}
+          <span class="badge">{{ task.status }}</span>
+        {% endif %}
+      </span>
+      <span class="detail-label">Patient</span>
+      <span class="detail-value">{{ task.patient_name or '—' }}</span>
+      <span class="detail-label">Patient GUID</span>
+      <span class="detail-value monospace">{{ task.patient_guid or '—' }}</span>
+      <span class="detail-label">Dispatched</span>
+      <span class="detail-value">{{ task.dispatched_at.strftime('%Y-%m-%d %H:%M UTC') if task.dispatched_at else '—' }}</span>
+      <span class="detail-label">Acknowledged</span>
+      <span class="detail-value">{{ task.acknowledged_at.strftime('%Y-%m-%d %H:%M UTC') if task.acknowledged_at else '—' }}</span>
+      <span class="detail-label">Completed</span>
+      <span class="detail-value">{{ task.completed_at.strftime('%Y-%m-%d %H:%M UTC') if task.completed_at else '—' }}</span>
+      <span class="detail-label">Observations</span>
+      <span class="detail-value">{{ task.total_observations_submitted or 0 }}</span>
+      <span class="detail-label">Last observation</span>
+      <span class="detail-value">{{ task.last_observation_at.strftime('%Y-%m-%d %H:%M UTC') if task.last_observation_at else '—' }}</span>
+      <span class="detail-label">Notes</span>
+      <span class="detail-value">{{ task.notes or '—' }}</span>
+      {% if task.request_guid %}
+      <span class="detail-label">Upstream</span>
+      <span class="detail-value monospace">{{ task.request_guid }}</span>
+      {% endif %}
+      {% if inbound %}
+      <span class="detail-label">Provider Status</span>
+      <span class="detail-value">{{ inbound.provider_status or '—' }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div>
+    {% if stream_status.streaming %}
+    <div class="card">
+      <h2>Glucose Stream</h2>
+      <div class="detail-grid">
+        <span class="detail-label">Status</span>
+        <span class="detail-value"><span class="badge badge-success">Streaming</span></span>
+        <span class="detail-label">Interval</span>
+        <span class="detail-value">{{ stream_status.interval_seconds }}s</span>
+      </div>
+    </div>
+    {% elif task.status in ('monitoring', 'acknowledged') %}
+    <div class="card">
+      <h2>Glucose Stream</h2>
+      <div class="detail-grid">
+        <span class="detail-label">Status</span>
+        <span class="detail-value"><span class="badge badge-warning">Stopped</span></span>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if task.status == 'dispatched' %}
+    <div class="card">
+      <h2>Acknowledge Task</h2>
+      <p class="text-muted mb-2">Acknowledging will auto-start the glucose stream.</p>
+      <form method="post" action="{{ url_for('web.accept_task', receipt_token=task.receipt_token) }}">
+        <div class="form-group">
+          <label for="notes">Notes (optional)</label>
+          <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Acknowledge</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if task.status in ('acknowledged', 'monitoring') %}
+    <div class="card">
+      <h2>Complete Monitoring</h2>
+      <p class="text-muted mb-2">This will stop the glucose stream and send a final completed status to the gateway.</p>
+      <form method="post" action="{{ url_for('web.complete_monitoring', receipt_token=task.receipt_token) }}">
+        <button type="submit" class="btn btn-danger">Stop Stream &amp; Complete</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if observation_logs %}
+<div class="card mt-2">
+  <h2>Observation Log</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Batch #</th>
+          <th>Observations</th>
+          <th>Gateway Status</th>
+          <th>Submitted</th>
+          <th>GUID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in observation_logs %}
+        <tr>
+          <td>{{ log.batch_number }}</td>
+          <td>{{ log.observation_count }}</td>
+          <td>
+            {% if log.gateway_status == 'delivered' %}
+              <span class="badge badge-success">Delivered</span>
+            {% elif log.gateway_status == 'failed' %}
+              <span class="badge badge-danger">Failed</span>
+            {% else %}
+              <span class="badge badge-warning">{{ log.gateway_status }}</span>
+            {% endif %}
+          </td>
+          <td>{{ log.submitted_at.strftime('%Y-%m-%d %H:%M:%S UTC') if log.submitted_at else '—' }}</td>
+          <td class="monospace">{{ log.guid[:12] }}…</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% if audit_entries %}
+<div class="card mt-2">
+  <h2>Audit Trail <span class="text-muted" style="font-size:0.8em">(latest 50)</span></h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Timestamp</th>
+          <th>GUID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in audit_entries %}
+        <tr>
+          <td>
+            {% if entry.action == 'acknowledge' %}
+              <span class="badge badge-info">Acknowledge</span>
+            {% elif entry.action == 'report' %}
+              <span class="badge badge-success">Report</span>
+            {% elif entry.action == 'observe' %}
+              <span class="badge badge-info">Observe</span>
+            {% else %}
+              <span class="badge">{{ entry.action }}</span>
+            {% endif %}
+          </td>
+          <td>{{ entry.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</td>
+          <td class="monospace">{{ entry.guid }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

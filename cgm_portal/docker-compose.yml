@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cgm_portal_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cgm_portal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cgm_portal_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-cgm_portal_db}
+    ports:
+      - "9081:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-cgm_portal}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: cgm_portal_app
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cgm_portal}:${POSTGRES_PASSWORD:-cgm_portal_dev}@db:5432/${POSTGRES_DB:-cgm_portal_db}
+    ports:
+      - "9080:9080"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}My Tasks — PDHC CGM Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>My Tasks</h1>
+    <p class="lead">{{ config.get('PROVIDER_NAME', '') }}</p>
+  </div>
+</div>
+
+<div class="card mb-2">
+  <div class="button-group-sm">
+    <a href="{{ url_for('web.task_list') }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+    <a href="{{ url_for('web.task_list', status='dispatched') }}" class="btn btn-sm {% if status_filter == 'dispatched' %}btn-primary{% else %}btn-secondary{% endif %}">Dispatched</a>
+    <a href="{{ url_for('web.task_list', status='acknowledged') }}" class="btn btn-sm {% if status_filter == 'acknowledged' %}btn-primary{% else %}btn-secondary{% endif %}">Acknowledged</a>
+    <a href="{{ url_for('web.task_list', status='monitoring') }}" class="btn btn-sm {% if status_filter == 'monitoring' %}btn-primary{% else %}btn-secondary{% endif %}">Monitoring</a>
+    <a href="{{ url_for('web.task_list', status='completed') }}" class="btn btn-sm {% if status_filter == 'completed' %}btn-primary{% else %}btn-secondary{% endif %}">Completed</a>
+  </div>
+</div>
+
+{% if tasks %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Receipt Token</th>
+        <th>Patient</th>
+        <th>Status</th>
+        <th>Observations</th>
+        <th>Dispatched</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task in tasks %}
+      <tr>
+        <td><code>{{ task.receipt_token }}</code></td>
+        <td>{{ task.patient_name or '—' }}</td>
+        <td>
+          {% if task.status == 'dispatched' %}
+            <span class="badge badge-warning">Dispatched</span>
+          {% elif task.status == 'acknowledged' %}
+            <span class="badge badge-info">Acknowledged</span>
+          {% elif task.status == 'monitoring' %}
+            <span class="badge badge-info">Monitoring</span>
+          {% elif task.status == 'completed' %}
+            <span class="badge badge-success">Completed</span>
+          {% elif task.status == 'cancelled' %}
+            <span class="badge badge-danger">Cancelled</span>
+          {% else %}
+            <span class="badge">{{ task.status }}</span>
+          {% endif %}
+        </td>
+        <td>{{ task.total_observations_submitted or 0 }}</td>
+        <td>{{ task.dispatched_at|local('%Y-%m-%d %H:%M') if task.dispatched_at else '—' }}</td>
+        <td>
+          <a href="{{ url_for('web.task_detail', receipt_token=task.receipt_token) }}" class="btn btn-sm btn-secondary">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p>No tasks found.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Receipts — PDHC CGM Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Submission Receipts</h1>
+    <p class="lead">{{ config.get('PROVIDER_NAME', '') }}</p>
+  </div>
+</div>
+
+{% if receipts %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Receipt Token</th>
+        <th>Status</th>
+        <th>Message</th>
+        <th>Submitted</th>
+        <th>GUID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in receipts %}
+      <tr>
+        <td><a href="{{ url_for('web.task_detail', receipt_token=r.receipt_token) }}"><code>{{ r.receipt_token }}</code></a></td>
+        <td><span class="badge badge-success">{{ r.status }}</span></td>
+        <td>{{ r.message or '—' }}</td>
+        <td>{{ r.submitted_at|local('%Y-%m-%d %H:%M:%S') if r.submitted_at else '—' }}</td>
+        <td class="monospace">{{ r.guid }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p>No receipts yet.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Gateway Receipts — PDHC CGM Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Gateway Receipts</h1>
+    <p class="lead">Observation ingestion confirmations from gateway.pdhc</p>
+  </div>
+</div>
+
+{% if receipts %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Receipt GUID</th>
+        <th>Service Request</th>
+        <th>Patient</th>
+        <th>Observations</th>
+        <th>Accepted</th>
+        <th>Payload Hash</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in receipts %}
+      <tr>
+        <td class="monospace">{{ r.receipt_guid[:12] }}…</td>
+        <td><a href="{{ url_for('web.task_detail', receipt_token=r.service_request_guid) }}"><code>{{ r.service_request_guid[:12] }}…</code></a></td>
+        <td class="monospace">{{ (r.patient_guid[:12] ~ '…') if r.patient_guid else '—' }}</td>
+        <td>{{ r.observations_stored }}</td>
+        <td>{{ r.accepted_at|local('%Y-%m-%d %H:%M') if r.accepted_at else '—' }}</td>
+        <td class="monospace">{{ (r.payload_hash[:16] ~ '…') if r.payload_hash else '—' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p>No gateway receipts yet. Receipts appear here after gateway.pdhc confirms observation ingestion.</p>
+</div>
+{% endif %}
+{% endblock %}

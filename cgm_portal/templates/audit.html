@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Audit Log — PDHC CGM Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Audit Log</h1>
+    <p class="lead">{{ config.get('PROVIDER_NAME', '') }}</p>
+  </div>
+</div>
+
+{% if entries %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Action</th>
+        <th>Receipt Token</th>
+        <th>Timestamp</th>
+        <th>GUID</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in entries %}
+      <tr>
+        <td>
+          {% if entry.action == 'acknowledge' %}
+            <span class="badge badge-info">Acknowledge</span>
+          {% elif entry.action == 'report' %}
+            <span class="badge badge-success">Report</span>
+          {% elif entry.action == 'observe' %}
+            <span class="badge badge-info">Observe</span>
+          {% elif entry.action == 'sync' %}
+            <span class="badge badge-pending">Sync</span>
+          {% else %}
+            <span class="badge">{{ entry.action }}</span>
+          {% endif %}
+        </td>
+        <td><a href="{{ url_for('web.task_detail', receipt_token=entry.receipt_token) }}"><code>{{ entry.receipt_token }}</code></a></td>
+        <td>{{ entry.created_at|local('%Y-%m-%d %H:%M:%S') }}</td>
+        <td class="monospace">{{ entry.guid }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <p>No audit entries.</p>
+</div>
+{% endif %}
+{% endblock %}

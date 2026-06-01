@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation — PDHC CGM Portal{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Documentation</h1>
+    <p class="lead">Guides for using and integrating with the CGM Portal</p>
+  </div>
+</div>
+
+<div class="dash-grid">
+  <div class="card">
+    <h2>Technical Integration Guide</h2>
+    <p>For developers. Covers API endpoints, authentication, continuous observation delivery, glucose streaming, and configuration.</p>
+    <p style="margin-top:0.75rem">
+      <a href="{{ url_for('web.download_doc', doc_name='technical-guide') }}" class="btn btn-primary">
+        Download Technical Guide
+      </a>
+    </p>
+  </div>
+</div>
+{% endblock %}

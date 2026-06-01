@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>CGM Portal</h1>
+    <p class="lead">Continuous glucose monitoring — task intake, streaming, and observation delivery</p>
+  </div>
+</div>
+
+{% if sync_status %}
+<div class="card mb-2">
+  <div class="page-header mb-0">
+    <div>
+      <h2>Sync Status</h2>
+    </div>
+    <form method="post" action="{{ url_for('web.trigger_sync') }}" style="margin:0">
+      <button type="submit" class="btn btn-sm btn-primary">Sync Now</button>
+    </form>
+  </div>
+  <div class="detail-grid mt-1">
+    <span class="detail-label">Instance</span>
+    <span class="detail-value">{{ sync_status.provider_name }}</span>
+    <span class="detail-label">GUID</span>
+    <span class="detail-value monospace">{{ sync_status.provider_guid }}</span>
+    <span class="detail-label">Background sync</span>
+    <span class="detail-value">
+      {% if sync_status.sync_enabled %}
+        <span class="badge badge-success">Enabled</span>
+      {% else %}
+        <span class="badge badge-warning">Disabled</span>
+      {% endif %}
+    </span>
+    <span class="detail-label">Last sync</span>
+    <span class="detail-value">{{ sync_status.last_sync_at|local('%Y-%m-%d %H:%M:%S') if sync_status.last_sync_at else 'never' }}</span>
+    <span class="detail-label">Inbound requests</span>
+    <span class="detail-value">{{ sync_status.inbound_count }}</span>
+    <span class="detail-label">Total synced</span>
+    <span class="detail-value">{{ sync_status.requests_synced }}</span>
+    <span class="detail-label">Status</span>
+    <span class="detail-value">
+      {% if sync_status.last_error %}
+        <span class="badge badge-danger">Error</span> {{ sync_status.last_error }}
+      {% else %}
+        <span class="badge badge-success">OK</span>
+      {% endif %}
+    </span>
+  </div>
+</div>
+{% endif %}
+
+<div class="dash-grid">
+  <a class="dash-card" href="{{ url_for('web.task_list') }}">
+    <i data-lucide="clipboard-list"></i>
+    <div class="count">{{ task_count }}</div>
+    <h2>All Tasks</h2>
+    <p>View and manage assigned tasks</p>
+  </a>
+  <a class="dash-card" href="{{ url_for('web.task_list', status='dispatched') }}">
+    <i data-lucide="clock"></i>
+    <div class="count">{{ pending_count }}</div>
+    <h2>Pending</h2>
+    <p>Tasks awaiting acknowledgement</p>
+  </a>
+  <a class="dash-card" href="{{ url_for('web.task_list', status='monitoring') }}">
+    <i data-lucide="activity"></i>
+    <div class="count">{{ monitoring_count }}</div>
+    <h2>Monitoring</h2>
+    <p>Tasks actively streaming glucose data</p>
+  </a>
+  <a class="dash-card" href="{{ url_for('web.task_list', status='completed') }}">
+    <i data-lucide="check-circle"></i>
+    <div class="count">{{ completed_count }}</div>
+    <h2>Completed</h2>
+    <p>Tasks with final report submitted</p>
+  </a>
+  <a class="dash-card" href="{{ url_for('web.receipt_list') }}">
+    <i data-lucide="receipt"></i>
+    <div class="count">{{ receipt_count }}</div>
+    <h2>Receipts</h2>
+    <p>Submission confirmations</p>
+  </a>
+  <a class="dash-card" href="{{ url_for('web.gateway_receipts') }}">
+    <i data-lucide="download"></i>
+    <div class="count">{{ gateway_receipt_count }}</div>
+    <h2>Gateway Receipts</h2>
+    <p>Observation ingestion confirmations</p>
+  </a>
+  <div class="dash-card" style="cursor:default;">
+    <i data-lucide="radio"></i>
+    <div class="count">{{ active_stream_count }}</div>
+    <h2>Active Streams</h2>
+    <p>Background glucose streams running now</p>
+  </div>
+</div>
+{% endblock %}
