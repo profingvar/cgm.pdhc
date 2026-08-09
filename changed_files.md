@@ -36,3 +36,4 @@ End-to-end replay of CGM → gateway.pdhc → cgm.pdhc receipt flow for SR `523d
 | `cgm_portal/app/__init__.py` | Ticket #70 / CLAUDE.md §10: tightened existing CORS from `Access-Control-Allow-Origin: *` to the specific `https://www.pdhc.se`, added `Access-Control-Allow-Methods: GET` and `Vary: Origin`. Verified via `curl -I -H 'Origin: https://www.pdhc.se'`: all three headers + `cache-control: no-store`, body unchanged `{"database":"connected","service":"cgm.pdhc","status":"ok"}`. Server backup at `/tmp/cgm_init_batch2.py.bak.20260416T185418Z`. |
 
 | 2026-07-13 | docs/user_manual.md (new) | Authored layman user manual (technical guide already existed); published on pdhc.se/documentation.html. |
+- cgm.pdhc/docs/cgm_technical_guide.md (Port Allocation section)

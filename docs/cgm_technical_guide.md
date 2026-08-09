@@ -301,3 +301,13 @@ handled by the wire-up tool described in:
 When reasoning about deployment changes that affect environment
 variables, restart pattern, or upstream auth, start there — the
 registry entry for this provider should always reflect reality.
+
+## Port Allocation
+
+All ports bind to `127.0.0.1` (loopback only); external traffic arrives
+via the reverse proxy.
+
+| Port | Service |
+|------|---------|
+| 9080 | Flask application (Gunicorn) |
+| 9081 | PostgreSQL database |
