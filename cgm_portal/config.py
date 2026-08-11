@@ -15,8 +15,12 @@ class Config:
     PROVIDER_GUID = os.environ.get('PROVIDER_GUID')
     PROVIDER_NAME = os.environ.get('PROVIDER_NAME')
 
-    # Upstream request service
-    REQUEST_SERVICE_URL = os.environ.get('REQUEST_SERVICE_URL', 'https://request.pdhc.se/api/v1')
+    # Upstream service that receives provider reports. NOTE: despite the name,
+    # /provider/report, /provider/feed and /download live on the GATEWAY, not
+    # request.pdhc — the default must point at gateway.pdhc.se (the live
+    # container already overrides to this; the old request.pdhc default would
+    # 404 every submission on a fresh deploy). Var name kept for the override.
+    REQUEST_SERVICE_URL = os.environ.get('REQUEST_SERVICE_URL', 'https://gateway.pdhc.se/api/v1')
     SSO_API_KEY = os.environ.get('SSO_API_KEY')  # legacy — kept for backward compat
     PROVIDER_TOKEN = os.environ.get('PROVIDER_TOKEN')  # PAT issued by request.pdhc
 
