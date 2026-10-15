@@ -37,3 +37,6 @@ End-to-end replay of CGM → gateway.pdhc → cgm.pdhc receipt flow for SR `523d
 
 | 2026-07-13 | docs/user_manual.md (new) | Authored layman user manual (technical guide already existed); published on pdhc.se/documentation.html. |
 - cgm.pdhc/docs/cgm_technical_guide.md (Port Allocation section)
+
+## 2026-10-15 — #708 sibling smoke
+- deploy/smoke_siblings.py  (NEW: 8 read-only checks against the configured upstream, which is gateway)
