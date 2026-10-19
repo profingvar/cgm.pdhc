@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-cgm_portal}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cgm_portal_dev}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       POSTGRES_DB: ${POSTGRES_DB:-cgm_portal_db}
     ports:
       - "9081:5432"
@@ -22,7 +22,7 @@ services:
     container_name: cgm_portal_app
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cgm_portal}:${POSTGRES_PASSWORD:-cgm_portal_dev}@db:5432/${POSTGRES_DB:-cgm_portal_db}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cgm_portal}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-cgm_portal_db}
     ports:
       - "9080:9080"
     depends_on:
