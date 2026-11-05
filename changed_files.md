@@ -40,3 +40,50 @@ End-to-end replay of CGM → gateway.pdhc → cgm.pdhc receipt flow for SR `523d
 
 ## 2026-10-15 — #708 sibling smoke
 - deploy/smoke_siblings.py  (NEW: 8 read-only checks against the configured upstream, which is gateway)
+
+#930 — bare `postgresql://` DSN converted to `+psycopg2` (2026-11-05)
+---------------------------------------------------------------------
+/Users/martiningvar/T7_sidewinder/cgm.pdhc/cgm_portal/docker-compose.yml:25
+
+SQLAlchemy==2.0.50 pinned. Note `requirements.txt` already carried #785's
+comment block EXPLAINING this exact mitigation while the compose did not
+apply it — a documented mitigation is not an applied one.
+
+WHY. SQLAlchemy 2.1 resolves a bare `postgresql://` to psycopg **v3** (#711).
+This service installs `psycopg2-binary` and not psycopg v3, so a bare scheme
+lets the INSTALLED SQLAlchemy pick a driver that is absent and the app
+crash-loops on the next `--build`. Verified it passes nothing to a raw
+`psycopg2.connect()` (which cannot parse a `+driver` scheme) — the DSN goes to
+SQLAlchemy only.
+
+NOT DEPLOYED and nothing regresses without it: a config-only compose change
+needs `docker-compose up -d` WITHOUT `--build`. The deployed compose still has
+to be compared (#940) — gateway's deployed copy already said `+psycopg2` while its
+repo copy did not, which is how this drift was found at all.
+
+Guarded by `tools/audit_dsn_drivers.py` (exit 1 on any bare DSN, 20 paired
+tests). The claim "all 21 services now use +psycopg2 explicitly (#711)" was
+false for 11 files; a hand survey cannot be the gate here.
+
+#941 — pdhc_keyauth is version-controlled at last (2026-11-05)
+--------------------------------------------------------------
+NO FILE IN THIS REPO CHANGED. Recorded here because this service's auth comes
+from a directory outside it.
+
+`cgm.pdhc/pdhc_keyauth` is a symlink to `~/T7_sidewinder/pdhc_keyauth`, which held
+680 lines of Flask auth code under NO version control from 2026-04-05 until
+now — tracked by no repo, invisible to `git status`. It is a git repo of its
+own as of 355016e, with a README carrying the measurements.
+
+Nothing changed at runtime: same inode, symlink untouched, and this suite is
+green afterwards. No production change either — the one unreleased fix in
+there (#563's idempotent `define_models`) is test-only, because a deployed
+process calls `create_app()` once per gunicorn worker.
+
+Worth knowing about this service specifically: on miserver the three consumers
+have THREE INDEPENDENT real directories, not symlinks, all holding the
+pre-#563 copy. So a fix made on the Mac does not propagate to production here,
+and a fix made in production to one service does not reach the other two.
+
+Open: whether to consume it as a submodule or a package (#943 holds that
+decision, since it is the same question as the 14 modules copied across repos).

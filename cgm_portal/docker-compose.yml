@@ -22,7 +22,12 @@ services:
     container_name: cgm_portal_app
     env_file: .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cgm_portal}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-cgm_portal_db}
+      # +psycopg2 is EXPLICIT and load-bearing (#711, #930): a bare
+      # `postgresql://` lets the INSTALLED SQLAlchemy pick the driver, and
+      # 2.1 resolves it to psycopg v3, which is not installed here.
+      # SQLAlchemy==2.0.50 pinned. requirements.txt already EXPLAINS this
+      # mitigation (#785's comment block); the compose did not apply it.
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-cgm_portal}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@db:5432/${POSTGRES_DB:-cgm_portal_db}
     ports:
       - "9080:9080"
     depends_on:
