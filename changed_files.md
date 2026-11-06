@@ -146,3 +146,58 @@ added, not a test).
 NOT done here: provider's other seven cgm-absent test files. They cover code
 that has DRIFTED between the two services (23 of 46 shared files), so they are
 not drop-in. #946.
+
+
+--- 2026-11-06 — #946 step 1: this repo is one half of a DELIBERATE fork ---
+
+No files changed. Measurement only, recorded because the next person to edit a
+shared file needs it.
+
+cgm.pdhc and provider.pdhc are one codebase forked into two repos: same layout
+under two top names, distinct inodes, no symlinks. 46 tracked .py files share a
+relative path — 23 have IDENTICAL code, 23 have DRIFTED.
+
+Step 1 asked whether the drift is deliberate feature work or accidental edit
+drift. It is deliberate, and the evidence is that the vocabularies are DISJOINT:
+
+  monitoring     cgm 51 occurrences in 11 files   provider 0
+  in_progress    cgm 0                            provider 2
+  observe        cgm 25 in 6 files                provider 0
+  monitoring_interval_seconds / total_observations_submitted / last_observation_at
+                 cgm 5 / 15 / 9                   provider 0 / 0 / 0
+
+A half-finished rename leaves BOTH vocabularies in one repo. These do not
+overlap at all. cgm also carries four extra provider_task columns for
+continuous monitoring, so converging would undo real feature work.
+
+The three equal-length drifted files, diffed in full: tests/conftest.py differs
+only in a fixture NAME, and app/models/task_audit_log.py and
+app/services/report_submission.py each differ by one domain word
+('observe' in VALID_ACTIONS; 'monitoring' vs 'in_progress' in the accepted
+status tuple). No accidental drift among them.
+
+TWO INSTRUMENT ERRORS WORTH NOT REPEATING. Both repos have an UNTRACKED venv/
+inside <name>_portal/, so a `grep --include='*.py'` of the directory counts
+pygments' own keyword lists — that is how a first pass reported 'observe' in
+provider, where there is none. Count on `git ls-files`. And the first control
+chosen was 'observe' itself, which appears in only one repo, so it could not
+prove the reader had opened the other repo's files at all; replaced with real
+positive controls (acknowledge 55, dispatched 55, receipt_token 247 in
+provider) and a negative one (a nonsense symbol, 0 in both).
+
+THE RULE THIS ESTABLISHES. The 23 identical files are shared infrastructure —
+app/api/auth.py, app/api/keys.py, app/models/api_key.py, audit.py, receipt.py,
+sync_state.py, access_session.py and the rest — kept byte-identical by hand with
+nothing recording that they must be. MIRROR a change to those. Do NOT mirror
+the drifted 23; the two services mean different things by that code.
+
+#945 the same day is the live precedent: a test written for cgm exposed a weak
+assertion in provider's identical module, and the fix went into both. Restoring
+those modules produced the same sha256 in each repo (api_key.py 54b0059bf189,
+access_session.py 12b3c98bbaee) — a cheap way to check a file is still shared.
+
+RATIFIED by the operator 2026-11-06: the two services DIVERGE. The drifted 23
+are deliberate domain difference, not debt, and are not to be reconciled. The
+identical 23 REMAIN a hand-mirrored shared set — ratifying divergence did not
+dissolve them, so "diverge" does not mean "mirror nothing". Replacing the hand
+with a mechanism is a separate decision. Recorded in CLAUDE.md §4.
