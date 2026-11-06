@@ -85,5 +85,64 @@ have THREE INDEPENDENT real directories, not symlinks, all holding the
 pre-#563 copy. So a fix made on the Mac does not propagate to production here,
 and a fix made in production to one service does not reach the other two.
 
-Open: whether to consume it as a submodule or a package (#943 holds that
-decision, since it is the same question as the 14 modules copied across repos).
+Open: whether to consume it as a submodule or a package. This line used to say
+"#943 holds that decision, since it is the same question as the 14 modules
+copied across repos". #943 was CLOSED 2026-11-06 with its premise disproved:
+there is no 14-module problem (its largest group was Flask-Migrate's generated
+migrations/env.py, in 14 repos), session_headers.py has ONE code variant across
+seven repos rather than four, and the copies are a documented deliberate choice.
+So pdhc_keyauth is now the only live instance of this question and must be
+decided on its own merits. See CLAUDE.md §4.
+
+
+--- 2026-11-06 — #945: key revocation/expiry had NO test coverage ---
+
+cgm_portal/tests/test_security.py        NEW
+
+Found while measuring #943's module duplication, not by looking for it.
+cgm's app/api/auth.py, app/api/keys.py and app/models/api_key.py are
+BYTE-identical to provider.pdhc's (same sha256), but cgm had 38 test functions
+to provider's 97, no tests/test_security.py at all, and ZERO tests mentioning
+revocation, expiry or rotation. cgm is a PUBLIC repo authenticating with API
+keys.
+
+STEP 1 FIRST, and it decided what this ticket was. The control was probed
+before anything was ported: it HOLDS. AccessSessionService.authenticate()
+calls ApiKey.is_valid() and raises AUTH_INVALID 401 on a revoked or expired
+key, reached over a real request. So this was test debt, not an incident —
+which is why nothing stronger was filed (the withdrawn #844 is the cost of
+getting that order wrong).
+
+Ported provider's six tests. Fixture names are identical in both conftests, so
+no renaming was needed. Added TWO CONTROLS that provider's file does not have:
+
+  test_CONTROL_unrevoked_unexpired_key_is_accepted
+  test_CONTROL_future_expiry_is_accepted
+
+The second is the one that matters: without it, test_expired_key_rejected would
+pass unchanged against an implementation that refused ANY key carrying an
+expires_at, regardless of date.
+
+MUTATION-TESTED, three mutations, each restored under a sha256 gate:
+
+  M1  is_valid() always True            -> 4 fail (revoked, expired, revocation, rotation)
+  M2  authenticate() drops is_valid()   -> 4 fail, same four
+  M3  expiry check removed only         -> 1 fail (expired only)
+
+M3 is the sharp one: the tests discriminate between the two halves of the
+control rather than asserting one blunt thing. Both CONTROL tests kept passing
+under every mutation, which is correct — they assert acceptance, and the
+mutations only loosen rejection.
+
+THE MUTATION FOUND A HOLE IN PROVIDER'S ORIGINAL, which had been ported
+verbatim. test_key_rotation_api did NOT fail under M1 or M2: it asserts
+`api_key.revoked is True`, a FIELD VALUE, and never that the old secret is
+refused. Rotation's entire security value is the latter. Strengthened here and
+in provider.pdhc (same one-assertion fix).
+
+Suite: 38 -> 46 passed. provider: 97 passed, unchanged count (an assertion was
+added, not a test).
+
+NOT done here: provider's other seven cgm-absent test files. They cover code
+that has DRIFTED between the two services (23 of 46 shared files), so they are
+not drop-in. #946.
