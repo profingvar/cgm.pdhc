@@ -75,6 +75,27 @@ class UpstreamClient:
         self._check_response(resp, 'report')
         return resp.json()
 
+    def post_status(self, service_request_guid, patient_guid, grant_token,
+                    status, contract_guid, provider_org_guid):
+        """Report a lifecycle status with no observation data.
+
+        gateway.pdhc forwards /provider/status to request.pdhc, which owns
+        the ServiceRequest lifecycle. /provider/report refuses a status with
+        no report_payload (400), which is how 'acknowledged' was being lost.
+        """
+        url = f'{self.base_url}/provider/status/{service_request_guid}'
+        body = {
+            'patient_guid': patient_guid,
+            'grant_token': grant_token,
+            'status': status,
+            'contract_guid': contract_guid,
+            'provider_org_guid': provider_org_guid,
+        }
+        logger.info('Posting status for SR %s (status=%s)', service_request_guid, status)
+        resp = self.session.post(url, json=body, timeout=30)
+        self._check_response(resp, 'status')
+        return resp.json()
+
     def ack_receipt(self, receipt_token):
         """Acknowledge a push delivery receipt."""
         url = f'{self.base_url}/provider/receipt/{receipt_token}/ack'

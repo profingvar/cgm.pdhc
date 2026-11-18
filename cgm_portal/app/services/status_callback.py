@@ -48,13 +48,25 @@ class StatusCallbackService:
         """Submit report via POST /provider/report/<sr_guid> with minimal payload."""
         try:
             client = UpstreamClient(base_url=base_url, provider_token=provider_token)
-            result = client.submit_report(
-                service_request_guid=inbound.request_guid,
-                patient_guid=inbound.patient_guid,
-                grant_token=inbound.grant_token,
-                status=status,
-                report_payload=report_payload,
-            )
+            if report_payload:
+                result = client.submit_report(
+                    service_request_guid=inbound.request_guid,
+                    patient_guid=inbound.patient_guid,
+                    grant_token=inbound.grant_token,
+                    status=status,
+                    report_payload=report_payload,
+                )
+            else:
+                # A status with no data goes to the lifecycle route; the
+                # report route refuses it (400) and the status was lost.
+                result = client.post_status(
+                    service_request_guid=inbound.request_guid,
+                    patient_guid=inbound.patient_guid,
+                    grant_token=inbound.grant_token,
+                    status=status,
+                    contract_guid=inbound.contract_guid,
+                    provider_org_guid=inbound.organisation_guid or provider_guid,
+                )
             if result:
                 inbound.provider_status = status
                 from ..extensions import db

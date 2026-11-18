@@ -45,9 +45,14 @@ class AcknowledgementService:
         # Push status back to request.pdhc.se
         try:
             from .status_callback import StatusCallbackService
-            StatusCallbackService.push_status(receipt_token, provider_guid, 'acknowledged')
-        except Exception:
-            pass
+            ok, err = StatusCallbackService.push_status(
+                receipt_token, provider_guid, 'acknowledged')
+            if not ok:
+                logger.warning('Acknowledgement of %s not delivered upstream: %s',
+                               receipt_token, err)
+        except Exception as e:
+            logger.warning('Acknowledgement of %s not delivered upstream: %s',
+                           receipt_token, e)
 
         # Auto-start glucose stream (non-blocking)
         if not current_app.config.get('TESTING'):
